@@ -17,6 +17,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Fix line endings
+        run: |
+          sudo apt-get install -y dos2unix
+          dos2unix gradlew
+
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
