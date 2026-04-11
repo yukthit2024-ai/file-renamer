@@ -124,7 +124,7 @@
                 android:visibility="gone"
                 app:indicatorColor="@color/primary"
                 app:trackColor="@color/divider"
-                app:indeterminate="true" />
+                android:indeterminate="true" />
 
         </LinearLayout>
 
