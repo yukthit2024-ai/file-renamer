@@ -2,8 +2,8 @@
 <resources>
     <string name="app_name">File Renamer</string>
     <string name="app_title">File Renamer</string>
-    <string name="app_subtitle">Select a folder to append .xyz to all file names</string>
-    <string name="btn_select_folder">Select Folder &amp; Rename Files</string>
+    <string name="app_subtitle">Reads folder path from filerenamer.config and appends .xyz to all file names</string>
+    <string name="btn_select_folder">Rename Files from Config</string>
     <string name="folder_icon_desc">Folder icon</string>
     <string name="status_icon_desc">Status icon</string>
 </resources>
