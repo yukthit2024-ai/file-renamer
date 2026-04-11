@@ -66,7 +66,7 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSelectFolder"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_height="wrap_content"
                 android:text="@string/btn_select_folder"
                 android:textSize="15sp"
                 android:textStyle="bold"
