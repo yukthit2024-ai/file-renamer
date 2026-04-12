@@ -1,0 +1,68 @@
+----------------------------------------------------------------------------------------
+create a android application which has a screen with a button.
+On button click, it has to find files in a user selected folder and rename the files by suffixing ".xyz" to it.
+Give me the prompts to give to an agent to achieve this
+----------------------------------------------------------------------------------------
+instead of kotlin, use java
+----------------------------------------------------------------------------------------
+present the above as one single prompt
+----------------------------------------------------------------------------------------
+Output
+
+Create a new Android project with the following specifications:
+
+PROJECT SETUP:
+- Package name: com.example.filerenamer
+- Minimum SDK: API 26 (Android 8.0)
+- Language: Java
+- Single Activity architecture
+- No Jetpack Compose (use XML layouts)
+
+UI LAYOUT (activity_main.xml):
+- A centered button labeled "Select Folder & Rename Files"
+- A TextView below it to show status/result messages (e.g., "3 files renamed successfully")
+- Clean, minimal Material Design styling
+
+FOLDER PICKER (MainActivity.java):
+- On button click, launch a folder picker using ACTION_OPEN_DOCUMENT_TREE intent
+- Use registerForActivityResult() with ActivityResultContracts.StartActivityForResult() 
+  to receive the selected folder URI
+- Take persistable URI permission for READ and WRITE access on the result
+
+FILE RENAMING LOGIC:
+- After a folder URI is selected, iterate over all files in the selected folder using 
+  DocumentFile.fromTreeUri()
+- Skip directories, only process files
+- Rename each file by appending ".xyz" to its current name (e.g., "photo.jpg" → "photo.jpg.xyz")
+  using DocumentFile.renameTo()
+- Count successes and failures and update the TextView with a summary 
+  like "Renamed 5/6 files successfully"
+
+PERMISSIONS & MANIFEST:
+- Add READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE permissions in AndroidManifest.xml
+- Add the <queries> block if needed for storage intents
+- Handle runtime permissions in MainActivity.java for devices below API 33 using 
+  ActivityCompat.requestPermissions() and overriding onRequestPermissionsResult()
+
+BACKGROUND THREADING:
+- Run the rename operation on a background thread using ExecutorService 
+  (Executors.newSingleThreadExecutor())
+- Post results back to the UI thread using runOnUiThread()
+- Do NOT use AsyncTask as it is deprecated
+
+EDGE CASES TO HANDLE:
+- Folder is empty → show "No files found in the selected folder"
+- A file rename fails → log the failure and continue with remaining files
+- User cancels the folder picker → do nothing, no crash
+
+ACCEPTANCE CRITERIA:
+- App builds without errors in Java
+- Folder picker opens on button click
+- Files in the selected folder are renamed with ".xyz" suffix
+- Status TextView updates correctly after renaming
+- App does not crash if folder is empty or picker is cancelled
+- No ANR — all file operations run off the main thread
+
+
+
+----------------------------------------------------------------------------------------

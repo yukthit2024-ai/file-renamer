@@ -117,9 +117,6 @@ public class MainActivity extends AppCompatActivity {
         progressIndicator = findViewById(R.id.progressIndicator);
 
         btnSelectFolder.setOnClickListener(v -> onSelectFolderClicked());
-
-        // Auto-read config on launch
-        checkPermissionsAndReadConfig();
     }
 
     @Override
@@ -234,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
         }
-        // If permission is already granted (or below API 30) try config again
+        // Permission is already granted (or below API 30) — read config and rename
         checkPermissionsAndReadConfig();
     }
 
