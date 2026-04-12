@@ -29,15 +29,6 @@
             android:padding="32dp"
             android:gravity="center">
 
-            <!-- App icon / header icon -->
-            <ImageView
-                android:id="@+id/iconView"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:layout_marginBottom="20dp"
-                android:src="@drawable/ic_folder"
-                android:contentDescription="@string/folder_icon_desc"
-                android:tint="@color/primary" />
 
             <!-- Title -->
             <TextView
@@ -73,9 +64,6 @@
                 android:textColor="@color/on_primary"
                 app:backgroundTint="@color/primary"
                 app:cornerRadius="12dp"
-                app:icon="@drawable/ic_folder_open"
-                app:iconGravity="textStart"
-                app:iconTint="@color/on_primary"
                 android:layout_marginBottom="20dp" />
 
             <!-- Divider -->

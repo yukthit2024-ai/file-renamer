@@ -329,14 +329,14 @@ public class MainActivity extends AppCompatActivity {
                 if (failCount == 0) {
                     message = "Renamed " + successCount + "/" + total + " file(s) successfully ✓";
                     if (skipCount > 0) {
-                        message += "\n" + skipCount + " file(s) skipped (already have .xyz).";
+                        message += "\n" + skipCount + " file(s) skipped (already randomized).";
                     }
                     type = StatusType.SUCCESS;
                 } else {
                     message = "Renamed " + successCount + "/" + total + " file(s).\n"
                             + failCount + " file(s) could not be renamed.";
                     if (skipCount > 0) {
-                        message += "\n" + skipCount + " file(s) skipped (already have .xyz).";
+                        message += "\n" + skipCount + " file(s) skipped (already randomized).";
                     }
                     type = StatusType.WARNING;
                 }
