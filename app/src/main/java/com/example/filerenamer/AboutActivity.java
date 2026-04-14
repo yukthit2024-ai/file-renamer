@@ -12,7 +12,7 @@ public class AboutActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_about);
 
-        String buildInfo = "Randomizer\n" +
+        String buildInfo = 
                 "Timestamp: " + BuildConfig.BUILD_TIMESTAMP + "\n" +
                 "Commit: " + BuildConfig.GIT_SHA + "\n" +
                 "Full SHA: " + BuildConfig.GIT_SHA_FULL + "\n" +

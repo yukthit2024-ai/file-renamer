@@ -22,5 +22,5 @@
     <string name="title_alerts">Alerts &amp; Notifications</string>
     <string name="nav_open">Open navigation drawer</string>
     <string name="nav_close">Close navigation drawer</string>
-    <string name="about_description">\n\nThis app is a powerful utility for randomizing file names in selected directories.</string>
+    <string name="about_description">\nThis app is a powerful utility for randomizing file names in selected directories.</string>
 </resources>
