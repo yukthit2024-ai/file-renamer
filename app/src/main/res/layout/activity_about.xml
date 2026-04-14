@@ -64,9 +64,10 @@
             android:layout_marginBottom="8dp" />
 
         <TextView
+            android:id="@+id/tvBuildInfo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Build Date: 2026-04-15\nBuild Host: WINDOWS-PRO-01\nGit Revision: stable-release-v1" />
+            android:text="" />
 
     </LinearLayout>
 </LinearLayout>

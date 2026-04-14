@@ -11,6 +11,16 @@ public class AboutActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_about);
 
+        String buildInfo = "Randomizer\n" +
+                "Timestamp: " + BuildConfig.BUILD_TIMESTAMP + "\n" +
+                "Commit: " + BuildConfig.GIT_SHA + "\n" +
+                "Full SHA: " + BuildConfig.GIT_SHA_FULL + "\n" +
+//                "Tag: " + BuildConfig.GIT_TAG + "\n\n" +
+                getString(R.string.about_description);
+
+        TextView tvBuildInfo = findViewById(R.id.tvBuildInfo);
+        tvBuildInfo.setText(buildInfo);
+
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
