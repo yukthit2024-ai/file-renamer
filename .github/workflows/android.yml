@@ -3,33 +3,86 @@ name: Build APK
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      # -- Checkout ------------------------------------------------------------
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-      - name: Setup JDK
+      # -- Java ----------------------------------------------------------------
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
+          cache: gradle          # caches ~/.gradle between runs for speed
 
-      - name: Fix line endings
+      # -- Gradle wrapper ------------------------------------------------------
+      - name: Fix line endings & make gradlew executable
         run: |
-          sudo apt-get install -y dos2unix
+          sudo apt-get install -y dos2unix 2>/dev/null
           dos2unix gradlew
+          chmod +x ./gradlew
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+      # -- Timestamp (set once, reused in artifact name & summary) -------------
+      - name: Generate build timestamp
+        #run: echo "BUILD_TIMESTAMP=$(date +'%Y%m%d.%H%M%S')" >> $GITHUB_ENV
+        run: echo "BUILD_TIMESTAMP=$(TZ=Asia/Kolkata date +'%Y%m%d.%H%M%S')" >> $GITHUB_ENV
+        
 
-      - name: Build APK
-        run: ./gradlew assembleDebug
+      # -- Build ---------------------------------------------------------------
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --stacktrace
 
-      - name: Upload APK
+      # -- Verify APK exists (helps debug path issues) -------------------------
+      - name: Show APK path
+        if: success()
+        run: |
+          echo "=== APK output ==="
+          find app/build/outputs/apk -name "*.apk" | tee apk_paths.txt
+          echo "APK path confirmed: $(cat apk_paths.txt)"
+
+      # -- Rename APK to match artifact name ----------------------------------
+      - name: Rename APK
+        if: success()
+        run: |
+          mv app/build/outputs/apk/debug/app-debug.apk \
+             app/build/outputs/apk/debug/Randomizer-${BUILD_TIMESTAMP}.apk
+          echo "Renamed APK ? Randomizer-${BUILD_TIMESTAMP}.apk"
+
+      # -- Upload APK artifact -------------------------------------------------
+      - name: Upload debug APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Randomizer-${{ env.BUILD_TIMESTAMP }}
+          path: app/build/outputs/apk/debug/Randomizer-${{ env.BUILD_TIMESTAMP }}.apk
+          if-no-files-found: error    # fail loudly if APK is missing
+
+      # -- Write job summary ---------------------------------------------------
+      - name: Job summary
+        if: success()
+        run: |
+          echo "## Build Succeeded" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| APK | \`app/build/outputs/apk/debug/app-debug.apk\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact | **Randomizer-$BUILD_TIMESTAMP** (download from the Summary tab above) |" >> $GITHUB_STEP_SUMMARY
+
+      # -- Upload build reports on failure (for easier debugging) --------------
+      - name: Upload build reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-reports
+          path: |
+            app/build/reports/
+            app/build/outputs/logs/
+          if-no-files-found: ignore
