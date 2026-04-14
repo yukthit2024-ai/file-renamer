@@ -34,28 +34,15 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="How do I randomize a folder?"
+                android:text="How do I ...?"
                 android:textStyle="bold"
                 android:textSize="16sp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="1. Tap the main button on the home screen.\n2. Select a folder from the system picker.\n3. Wait for the process to complete."
+                                                                                                                                                           android:text="1. .... .... .... .... \n2. .... .... .... .... \n3. .... .... .... ... ..... ...."
                 android:layout_marginBottom="16dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="What does 'Randomize' do?"
-                android:textStyle="bold"
-                android:textSize="16sp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="It appends a random-like suffix (.xyz) to all files in the selected directory to prevent easy identification."
-                android:layout_marginBottom="24dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:layout_width="match_parent"
