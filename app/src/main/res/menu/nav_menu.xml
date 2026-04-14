@@ -10,10 +10,6 @@
             android:icon="@drawable/ic_info"
             android:title="@string/menu_help" />
         <item
-            android:id="@+id/nav_alerts"
-            android:icon="@drawable/ic_error"
-            android:title="@string/menu_alerts" />
-        <item
             android:id="@+id/nav_about"
             android:icon="@drawable/ic_check_circle"
             android:title="@string/menu_about" />
