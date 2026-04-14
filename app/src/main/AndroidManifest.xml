@@ -36,6 +36,11 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".SettingsActivity" />
+        <activity android:name=".HelpActivity" />
+        <activity android:name=".AboutActivity" />
+        <activity android:name=".AlertsActivity" />
+
     </application>
 
 </manifest>

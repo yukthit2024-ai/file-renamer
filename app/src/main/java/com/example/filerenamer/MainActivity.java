@@ -24,7 +24,14 @@ import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.widget.Toolbar;
+import androidx.drawerlayout.widget.DrawerLayout;
+import android.view.MenuItem;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -54,6 +61,8 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout              statusContainer;
     private ImageView                 statusIcon;
     private LinearProgressIndicator   progressIndicator;
+    private DrawerLayout              drawerLayout;
+    private NavigationView            navigationView;
 
     // Background thread executor
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -110,11 +119,49 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Setup Toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         btnSelectFolder   = findViewById(R.id.btnSelectFolder);
         tvStatus          = findViewById(R.id.tvStatus);
         statusContainer   = findViewById(R.id.statusContainer);
         statusIcon        = findViewById(R.id.statusIcon);
         progressIndicator = findViewById(R.id.progressIndicator);
+        drawerLayout      = findViewById(R.id.drawer_layout);
+        navigationView    = findViewById(R.id.nav_view);
+
+        // Setup Drawer Toggle
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawerLayout, toolbar, R.string.nav_open, R.string.nav_close);
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
+
+        // Setup Navigation View
+        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                int id = item.getItemId();
+                Intent intent = null;
+
+                if (id == R.id.nav_settings) {
+                    intent = new Intent(MainActivity.this, SettingsActivity.class);
+                } else if (id == R.id.nav_help) {
+                    intent = new Intent(MainActivity.this, HelpActivity.class);
+                } else if (id == R.id.nav_alerts) {
+                    intent = new Intent(MainActivity.this, AlertsActivity.class);
+                } else if (id == R.id.nav_about) {
+                    intent = new Intent(MainActivity.this, AboutActivity.class);
+                }
+
+                if (intent != null) {
+                    startActivity(intent);
+                }
+
+                drawerLayout.closeDrawers();
+                return true;
+            }
+        });
 
         btnSelectFolder.setOnClickListener(v -> onSelectFolderClicked());
     }
