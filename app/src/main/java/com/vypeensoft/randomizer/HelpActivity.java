@@ -1,4 +1,4 @@
-package com.example.filerenamer;
+package com.vypeensoft.randomizer;
 
 import android.os.Bundle;
 import android.view.MenuItem;

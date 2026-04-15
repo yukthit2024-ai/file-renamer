@@ -1,4 +1,4 @@
-package com.example.filerenamer;
+package com.vypeensoft.randomizer;
 
 import android.Manifest;
 import android.content.Intent;

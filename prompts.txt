@@ -12,7 +12,7 @@ Output
 Create a new Android project with the following specifications:
 
 PROJECT SETUP:
-- Package name: com.example.filerenamer
+- Package name: com.vypeensoft.randomizer
 - Minimum SDK: API 26 (Android 8.0)
 - Language: Java
 - Single Activity architecture
