@@ -37,6 +37,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -223,15 +226,28 @@ public class MainActivity extends AppCompatActivity {
                     "Config file not found.\n\n"
                             + "Create \"filerenamer.config\" in the root of your storage "
                             + "(" + CONFIG_FILE_PATH + ") "
-                            + "and put the target folder path on the first line.\n\n"
-                            + "Example:\n/sdcard/Downloads",
+                            + "and put the target folder paths on each line.\n\n"
+                            + "Example:\n/sdcard/Downloads\n/sdcard/DCIM/Camera",
                     StatusType.INFO);
             return;
         }
 
-        String folderPath;
+        List<DocumentFile> targetDirs = new ArrayList<>();
+        List<String> missingPaths = new ArrayList<>();
+
         try (BufferedReader reader = new BufferedReader(new FileReader(configFile))) {
-            folderPath = reader.readLine();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) continue;
+
+                File targetDir = new File(line);
+                if (targetDir.exists() && targetDir.isDirectory()) {
+                    targetDirs.add(DocumentFile.fromFile(targetDir));
+                } else {
+                    missingPaths.add(line);
+                }
+            }
         } catch (IOException e) {
             Log.e(TAG, "Failed to read config file", e);
             showStatus("Could not read " + CONFIG_FILE_PATH + ":\n" + e.getMessage(),
@@ -239,26 +255,19 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        if (folderPath == null || folderPath.trim().isEmpty()) {
-            showStatus("Config file is empty.\n\nAdd the target folder path on the first line.",
-                    StatusType.ERROR);
+        if (targetDirs.isEmpty()) {
+            if (missingPaths.isEmpty()) {
+                showStatus("Config file is empty.\n\nAdd one or more target folder paths, each on a new line.",
+                        StatusType.ERROR);
+            } else {
+                showStatus("No valid folders found in config.\n\nFolders not found:\n" + String.join("\n", missingPaths),
+                        StatusType.ERROR);
+            }
             return;
         }
 
-        folderPath = folderPath.trim();
-        File targetDir = new File(folderPath);
-
-        if (!targetDir.exists() || !targetDir.isDirectory()) {
-            showStatus("Folder not found:\n" + folderPath
-                    + "\n\nCheck the path in " + CONFIG_FILE_PATH,
-                    StatusType.ERROR);
-            return;
-        }
-
-        // All good — convert to a DocumentFile and start renaming
-        Uri folderUri = Uri.fromFile(targetDir);
-        DocumentFile docDir = DocumentFile.fromFile(targetDir);
-        startRenaming(docDir);
+        // All good — start renaming across all found folders
+        startRenaming(targetDirs);
     }
 
     // -------------------------------------------------------------------------
@@ -310,13 +319,13 @@ public class MainActivity extends AppCompatActivity {
     // Rename logic — runs on a background thread via ExecutorService
     // -------------------------------------------------------------------------
 
-    /** Overload accepting a DocumentFile directory directly (from config path). */
-    private void startRenaming(DocumentFile directory) {
+    /** Process multiple directories. */
+    private void startRenaming(List<DocumentFile> directories) {
         runOnUiThread(() -> {
             btnSelectFolder.setEnabled(false);
             progressIndicator.setVisibility(View.VISIBLE);
             statusContainer.setVisibility(View.GONE);
-            showStatus("Renaming files…", StatusType.INFO);
+            showStatus("Renaming files in " + directories.size() + " folder(s)…", StatusType.INFO);
         });
 
         executor.execute(() -> {
@@ -325,44 +334,45 @@ public class MainActivity extends AppCompatActivity {
             int skipCount    = 0;
 
             try {
-                if (directory == null || !directory.isDirectory()) {
-                    postStatus("Unable to access the selected folder.", StatusType.ERROR);
-                    return;
-                }
-
-                DocumentFile[] files = directory.listFiles();
-
-                if (files == null || files.length == 0) {
-                    postStatus("No files found in the folder.", StatusType.INFO);
-                    return;
-                }
-
-                for (DocumentFile file : files) {
-                    if (!file.isFile()) continue;
-
-                    String originalName = file.getName();
-                    if (originalName == null) {
-                        Log.w(TAG, "Skipping file with null name.");
-                        failCount++;
+                for (DocumentFile directory : directories) {
+                    if (directory == null || !directory.isDirectory()) {
+                        Log.w(TAG, "Skipping invalid DocumentFile entry.");
                         continue;
                     }
 
-                    // Skip files already having .xyz extension
-                    if (originalName.endsWith(XYZ_SUFFIX)) {
-                        Log.d(TAG, "Already has .xyz, skipping: " + originalName);
-                        skipCount++;
+                    DocumentFile[] files = directory.listFiles();
+                    if (files == null || files.length == 0) {
+                        Log.d(TAG, "No files in folder: " + (directory.getName() != null ? directory.getName() : "unknown"));
                         continue;
                     }
 
-                    String newName = originalName + XYZ_SUFFIX;
-                    boolean renamed = file.renameTo(newName);
+                    for (DocumentFile file : files) {
+                        if (!file.isFile()) continue;
 
-                    if (renamed) {
-                        successCount++;
-                        Log.d(TAG, "Renamed: " + originalName + " → " + newName);
-                    } else {
-                        failCount++;
-                        Log.w(TAG, "Failed to rename: " + originalName);
+                        String originalName = file.getName();
+                        if (originalName == null) {
+                            Log.w(TAG, "Skipping file with null name.");
+                            failCount++;
+                            continue;
+                        }
+
+                        // Skip files already having .xyz extension
+                        if (originalName.endsWith(XYZ_SUFFIX)) {
+                            Log.d(TAG, "Already has .xyz, skipping: " + originalName);
+                            skipCount++;
+                            continue;
+                        }
+
+                        String newName = originalName + XYZ_SUFFIX;
+                        boolean renamed = file.renameTo(newName);
+
+                        if (renamed) {
+                            successCount++;
+                            Log.d(TAG, "Renamed: " + originalName + " → " + newName);
+                        } else {
+                            failCount++;
+                            Log.w(TAG, "Failed to rename: " + originalName);
+                        }
                     }
                 }
 
@@ -371,14 +381,20 @@ public class MainActivity extends AppCompatActivity {
                 String message;
                 StatusType type;
 
-                if (failCount == 0) {
-                    message = "Renamed " + successCount + "/" + total + " file(s) successfully ✓";
+                if (total == 0) {
+                    message = "No files found to rename in the " + directories.size() + " folder(s).";
+                    if (skipCount > 0) {
+                        message += "\n" + skipCount + " file(s) already randomized.";
+                    }
+                    type = StatusType.INFO;
+                } else if (failCount == 0) {
+                    message = "Renamed " + successCount + "/" + total + " file(s) across " + directories.size() + " folder(s) successfully ✓";
                     if (skipCount > 0) {
                         message += "\n" + skipCount + " file(s) skipped (already randomized).";
                     }
                     type = StatusType.SUCCESS;
                 } else {
-                    message = "Renamed " + successCount + "/" + total + " file(s).\n"
+                    message = "Processed " + successCount + "/" + total + " file(s) across " + directories.size() + " folder(s).\n"
                             + failCount + " file(s) could not be renamed.";
                     if (skipCount > 0) {
                         message += "\n" + skipCount + " file(s) skipped (already randomized).";
@@ -393,6 +409,11 @@ public class MainActivity extends AppCompatActivity {
                 postStatus("An unexpected error occurred: " + e.getMessage(), StatusType.ERROR);
             }
         });
+    }
+
+    /** Overload accepting a DocumentFile directory directly. */
+    private void startRenaming(DocumentFile directory) {
+        startRenaming(Collections.singletonList(directory));
     }
 
     /** Overload accepting a SAF URI (kept as fallback). */
