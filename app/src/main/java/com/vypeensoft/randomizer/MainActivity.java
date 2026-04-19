@@ -377,29 +377,18 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 // Build result message
-                int total = successCount + failCount;
                 String message;
                 StatusType type;
 
-                if (total == 0) {
-                    message = "No files found to rename in the " + directories.size() + " folder(s).";
-                    if (skipCount > 0) {
-                        message += "\n" + skipCount + " file(s) already randomized.";
-                    }
-                    type = StatusType.INFO;
-                } else if (failCount == 0) {
-                    message = "Renamed " + successCount + "/" + total + " file(s) across " + directories.size() + " folder(s) successfully ✓";
-                    if (skipCount > 0) {
-                        message += "\n" + skipCount + " file(s) skipped (already randomized).";
-                    }
+                if (failCount > 0) {
+                    message = "Some Randomization Error";
+                    type = (successCount > 0) ? StatusType.WARNING : StatusType.ERROR;
+                } else if (successCount > 0) {
+                    message = "Randomization Success";
                     type = StatusType.SUCCESS;
                 } else {
-                    message = "Processed " + successCount + "/" + total + " file(s) across " + directories.size() + " folder(s).\n"
-                            + failCount + " file(s) could not be renamed.";
-                    if (skipCount > 0) {
-                        message += "\n" + skipCount + " file(s) skipped (already randomized).";
-                    }
-                    type = StatusType.WARNING;
+                    message = "No Files To Randomize";
+                    type = StatusType.INFO;
                 }
 
                 postStatus(message, type);
