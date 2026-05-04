@@ -60,12 +60,16 @@ public class MainActivity extends AppCompatActivity {
 
     // UI components
     private MaterialButton            btnSelectFolder;
+    private MaterialButton            btnReverse;
     private TextView                  tvStatus;
     private LinearLayout              statusContainer;
     private ImageView                 statusIcon;
     private LinearProgressIndicator   progressIndicator;
     private DrawerLayout              drawerLayout;
     private NavigationView            navigationView;
+
+    // State to preserve intent across permission requests
+    private boolean isPendingReverse = false;
 
     // Background thread executor
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -80,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
                         // User returned from settings — check again
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
                                 && Environment.isExternalStorageManager()) {
-                            readConfigAndStart();
+                            readConfigAndStart(isPendingReverse);
                         } else {
                             showStatus(
                                     "\"All Files Access\" permission is required to read "
@@ -127,6 +131,7 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         btnSelectFolder   = findViewById(R.id.btnSelectFolder);
+        btnReverse        = findViewById(R.id.btnReverse);
         tvStatus          = findViewById(R.id.tvStatus);
         statusContainer   = findViewById(R.id.statusContainer);
         statusIcon        = findViewById(R.id.statusIcon);
@@ -165,6 +170,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnSelectFolder.setOnClickListener(v -> onSelectFolderClicked());
+        btnReverse.setOnClickListener(v -> onReverseClicked());
     }
 
     @Override
@@ -181,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
      * Called on launch (and again when the button is tapped).
      * Routes through permission checks before reading the config file.
      */
-    private void checkPermissionsAndReadConfig() {
+    private void checkPermissionsAndReadConfig(boolean isReverse) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // API 30+: need "All Files Access"
             if (!Environment.isExternalStorageManager()) {
@@ -214,11 +220,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        readConfigAndStart();
+        readConfigAndStart(isReverse);
     }
 
     /** Read the config file and kick off renaming. */
-    private void readConfigAndStart() {
+    private void readConfigAndStart(boolean isReverse) {
         File configFile = new File(CONFIG_FILE_PATH);
 
         if (!configFile.exists()) {
@@ -267,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // All good — start renaming across all found folders
-        startRenaming(targetDirs);
+        startRenaming(targetDirs, isReverse);
     }
 
     // -------------------------------------------------------------------------
@@ -275,6 +281,7 @@ public class MainActivity extends AppCompatActivity {
     // -------------------------------------------------------------------------
 
     private void onSelectFolderClicked() {
+        isPendingReverse = false;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {
                 // Open the system "All Files Access" settings page
@@ -286,7 +293,23 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         // Permission is already granted (or below API 30) — read config and rename
-        checkPermissionsAndReadConfig();
+        checkPermissionsAndReadConfig(false);
+    }
+
+    private void onReverseClicked() {
+        isPendingReverse = true;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                // Open the system "All Files Access" settings page
+                Intent intent = new Intent(
+                        Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                        Uri.parse("package:" + getPackageName()));
+                manageStorageLauncher.launch(intent);
+                return;
+            }
+        }
+        // Permission is already granted (or below API 30) — read config and reverse
+        checkPermissionsAndReadConfig(true);
     }
 
     // -------------------------------------------------------------------------
@@ -307,7 +330,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             if (allGranted) {
-                readConfigAndStart();
+                readConfigAndStart(isPendingReverse);
             } else {
                 showStatus("Storage permission denied. Cannot read " + CONFIG_FILE_PATH,
                         StatusType.ERROR);
@@ -320,12 +343,13 @@ public class MainActivity extends AppCompatActivity {
     // -------------------------------------------------------------------------
 
     /** Process multiple directories. */
-    private void startRenaming(List<DocumentFile> directories) {
+    private void startRenaming(List<DocumentFile> directories, boolean isReverse) {
         runOnUiThread(() -> {
             btnSelectFolder.setEnabled(false);
+            btnReverse.setEnabled(false);
             progressIndicator.setVisibility(View.VISIBLE);
             statusContainer.setVisibility(View.GONE);
-            showStatus("Renaming files in " + directories.size() + " folder(s)…", StatusType.INFO);
+            showStatus((isReverse ? "Reversing" : "Renaming") + " files in " + directories.size() + " folder(s)…", StatusType.INFO);
         });
 
         executor.execute(() -> {
@@ -356,22 +380,33 @@ public class MainActivity extends AppCompatActivity {
                             continue;
                         }
 
-                        // Skip files already having .xyz extension
-                        if (originalName.endsWith(XYZ_SUFFIX)) {
-                            Log.d(TAG, "Already has .xyz, skipping: " + originalName);
-                            skipCount++;
-                            continue;
+                        String newName;
+                        if (isReverse) {
+                            if (originalName.endsWith(XYZ_SUFFIX)) {
+                                newName = originalName.substring(0, originalName.length() - XYZ_SUFFIX.length());
+                            } else {
+                                Log.d(TAG, "Does not have .xyz, skipping: " + originalName);
+                                skipCount++;
+                                continue;
+                            }
+                        } else {
+                            // Skip files already having .xyz extension
+                            if (originalName.endsWith(XYZ_SUFFIX)) {
+                                Log.d(TAG, "Already has .xyz, skipping: " + originalName);
+                                skipCount++;
+                                continue;
+                            }
+                            newName = originalName + XYZ_SUFFIX;
                         }
 
-                        String newName = originalName + XYZ_SUFFIX;
                         boolean renamed = file.renameTo(newName);
 
                         if (renamed) {
                             successCount++;
-                            Log.d(TAG, "Renamed: " + originalName + " → " + newName);
+                            Log.d(TAG, (isReverse ? "Reversed: " : "Renamed: ") + originalName + " → " + newName);
                         } else {
                             failCount++;
-                            Log.w(TAG, "Failed to rename: " + originalName);
+                            Log.w(TAG, "Failed to " + (isReverse ? "reverse: " : "rename: ") + originalName);
                         }
                     }
                 }
@@ -381,34 +416,34 @@ public class MainActivity extends AppCompatActivity {
                 StatusType type;
 
                 if (failCount > 0) {
-                    message = "Some Randomization Error";
+                    message = isReverse ? "Some Reversal Error" : "Some Randomization Error";
                     type = (successCount > 0) ? StatusType.WARNING : StatusType.ERROR;
                 } else if (successCount > 0) {
-                    message = "Randomization Success";
+                    message = isReverse ? "Reversal Success" : "Randomization Success";
                     type = StatusType.SUCCESS;
                 } else {
-                    message = "No Files To Randomize";
+                    message = isReverse ? "No Files To Reverse" : "No Files To Randomize";
                     type = StatusType.INFO;
                 }
 
                 postStatus(message, type);
 
             } catch (Exception e) {
-                Log.e(TAG, "Unexpected error during renaming", e);
+                Log.e(TAG, "Unexpected error during " + (isReverse ? "reversal" : "renaming"), e);
                 postStatus("An unexpected error occurred: " + e.getMessage(), StatusType.ERROR);
             }
         });
     }
 
     /** Overload accepting a DocumentFile directory directly. */
-    private void startRenaming(DocumentFile directory) {
-        startRenaming(Collections.singletonList(directory));
+    private void startRenaming(DocumentFile directory, boolean isReverse) {
+        startRenaming(Collections.singletonList(directory), isReverse);
     }
 
     /** Overload accepting a SAF URI (kept as fallback). */
-    private void startRenaming(Uri treeUri) {
+    private void startRenaming(Uri treeUri, boolean isReverse) {
         DocumentFile directory = DocumentFile.fromTreeUri(this, treeUri);
-        startRenaming(directory);
+        startRenaming(directory, isReverse);
     }
 
     // -------------------------------------------------------------------------
@@ -419,6 +454,7 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             progressIndicator.setVisibility(View.GONE);
             btnSelectFolder.setEnabled(true);
+            btnReverse.setEnabled(true);
             showStatus(message, type);
         });
     }

@@ -78,6 +78,19 @@
                         android:textColor="@color/on_primary"
                         app:backgroundTint="@color/primary"
                         app:cornerRadius="12dp"
+                        android:layout_marginBottom="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnReverse"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/btn_reverse"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/primary"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        app:strokeColor="@color/primary"
+                        app:cornerRadius="12dp"
                         android:layout_marginBottom="20dp" />
 
                     <View

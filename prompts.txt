@@ -3,7 +3,10 @@ create a android application which has a screen with a button.
 On button click, it has to find files in a user selected folder and rename the files by suffixing ".xyz" to it.
 Give me the prompts to give to an agent to achieve this
 ----------------------------------------------------------------------------------------
+more prompts
 instead of kotlin, use java
+Add another button, on click of that button, it should reverse the action done by "Randomize"
+
 ----------------------------------------------------------------------------------------
 present the above as one single prompt
 ----------------------------------------------------------------------------------------
