@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
                                             | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
                                     getContentResolver()
                                             .takePersistableUriPermission(treeUri, flags);
-                                    startRenaming(treeUri);
+                                    startRenaming(treeUri, isPendingReverse);
                                 }
                             }
                         }
