@@ -36,6 +36,7 @@ import android.view.MenuItem;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -234,19 +235,29 @@ public class MainActivity extends AppCompatActivity {
         readConfigAndStart(actionType);
     }
 
-    /** Read the config file and kick off renaming. */
+    /** Read the config file and kick off action. */
     private void readConfigAndStart(ActionType actionType) {
         File configFile = new File(CONFIG_FILE_PATH);
 
         if (!configFile.exists()) {
-            showStatus(
-                    "Config file not found.\n\n"
-                            + "Create \"filerenamer.config\" in the root of your storage "
-                            + "(" + CONFIG_FILE_PATH + ") "
-                            + "and put the target folder paths on each line.\n\n"
-                            + "Example:\n/sdcard/Downloads\n/sdcard/DCIM/Camera",
-                    StatusType.INFO);
-            return;
+            try {
+                // Default to DCIM/Camera
+                File dcimDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+                File cameraDir = new File(dcimDir, "Camera");
+                String defaultPath = cameraDir.getAbsolutePath();
+
+                try (FileWriter writer = new FileWriter(configFile)) {
+                    writer.write(defaultPath);
+                }
+                Log.d(TAG, "Created default config file with path: " + defaultPath);
+            } catch (IOException e) {
+                Log.e(TAG, "Failed to create default config file", e);
+                showStatus(
+                        "Config file not found and could not be created automatically.\n\n"
+                                + "Please create it manually at:\n" + CONFIG_FILE_PATH,
+                        StatusType.ERROR);
+                return;
+            }
         }
 
         List<DocumentFile> targetDirs = new ArrayList<>();
