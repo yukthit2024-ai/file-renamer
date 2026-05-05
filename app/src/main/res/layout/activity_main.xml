@@ -71,7 +71,9 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSelectFolder"
                         android:layout_width="match_parent"
-                        android:layout_height="56dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="56dp"
+                        android:paddingVertical="12dp"
                         android:text="@string/btn_select_folder"
                         android:textSize="15sp"
                         android:textStyle="bold"
@@ -83,7 +85,9 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnReverse"
                         android:layout_width="match_parent"
-                        android:layout_height="56dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="56dp"
+                        android:paddingVertical="12dp"
                         android:text="@string/btn_reverse"
                         android:textSize="15sp"
                         android:textStyle="bold"
@@ -95,7 +99,9 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnCheckSum"
                         android:layout_width="match_parent"
-                        android:layout_height="56dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="56dp"
+                        android:paddingVertical="12dp"
                         android:text="@string/btn_check_sum"
                         android:textSize="15sp"
                         android:textStyle="bold"

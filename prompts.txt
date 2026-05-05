@@ -16,6 +16,9 @@ more prompts
 *	if config file "filerenamer.config" doesnt exist in default location, create a new file with the default camera photo folder as the folder path inside it
 *	MD5 file is still getting created with .md5.bin extension.  This has to be only FILENAME.md5
 	If a file extension is md5, then its MD5 need not be created
+*	make button of more height so that the text on that is visible.  Now only one line of text is visible even though the button text is of two lines.
+
+
 
 ----------------------------------------------------------------------------------------
 present the above as one single prompt
