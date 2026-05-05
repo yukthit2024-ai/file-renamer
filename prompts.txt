@@ -18,6 +18,7 @@ more prompts
 	If a file extension is md5, then its MD5 need not be created
 *	make button of more height so that the text on that is visible.  Now only one line of text is visible even though the button text is of two lines.
 *	when "Randomization", skip md5 extension files
+*	while doing MD5, check if the original file is of XYZ extension.  If it is , it means it has been renamed.  In that case do MD5 for the original filename(without XYZ extn)
 
 
 ----------------------------------------------------------------------------------------

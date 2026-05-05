@@ -425,8 +425,14 @@ public class MainActivity extends AppCompatActivity {
                                 continue;
                             }
 
+                            // Determine the base name for the MD5 file (strip .xyz if present)
+                            String baseNameForMd5 = originalName;
+                            if (originalName.endsWith(XYZ_SUFFIX)) {
+                                baseNameForMd5 = originalName.substring(0, originalName.length() - XYZ_SUFFIX.length());
+                            }
+
                             // Check if .md5 already exists
-                            String md5FileName = originalName + ".md5";
+                            String md5FileName = baseNameForMd5 + ".md5";
                             boolean md5Exists = false;
                             for (DocumentFile sibling : files) {
                                 if (md5FileName.equalsIgnoreCase(sibling.getName())) {
@@ -436,7 +442,7 @@ public class MainActivity extends AppCompatActivity {
                             }
 
                             if (md5Exists) {
-                                Log.d(TAG, "MD5 already exists for: " + originalName);
+                                Log.d(TAG, "MD5 already exists for: " + baseNameForMd5);
                                 skipCount++;
                                 continue;
                             }
@@ -448,7 +454,7 @@ public class MainActivity extends AppCompatActivity {
                                 if (md5File != null) {
                                     try (OutputStream out = getContentResolver().openOutputStream(md5File.getUri())) {
                                         if (out != null) {
-                                            String content = md5 + " " + originalName;
+                                            String content = md5 + " " + baseNameForMd5;
                                             out.write(content.getBytes());
                                             successCount++;
                                             Log.d(TAG, "Generated MD5 for: " + originalName);
