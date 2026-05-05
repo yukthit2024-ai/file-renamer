@@ -444,7 +444,7 @@ public class MainActivity extends AppCompatActivity {
                             // Generate MD5
                             try {
                                 String md5 = calculateMD5(file);
-                                DocumentFile md5File = directory.createFile("text/plain", md5FileName);
+                                DocumentFile md5File = directory.createFile("*/*", md5FileName);
                                 if (md5File != null) {
                                     try (OutputStream out = getContentResolver().openOutputStream(md5File.getUri())) {
                                         if (out != null) {
