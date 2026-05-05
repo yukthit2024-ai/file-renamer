@@ -71,38 +71,36 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSelectFolder"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="56dp"
                         android:text="@string/btn_select_folder"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="@color/on_primary"
-                        app:backgroundTint="@color/primary"
+                        app:backgroundTint="@color/blue_dark"
                         app:cornerRadius="12dp"
                         android:layout_marginBottom="12dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnReverse"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="56dp"
                         android:text="@string/btn_reverse"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textColor="@color/primary"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        app:strokeColor="@color/primary"
+                        android:textColor="@color/on_primary"
+                        app:backgroundTint="@color/blue_medium"
                         app:cornerRadius="12dp"
                         android:layout_marginBottom="12dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnCheckSum"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="56dp"
                         android:text="@string/btn_check_sum"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textColor="@color/primary"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        app:strokeColor="@color/primary"
+                        android:textColor="@color/on_primary"
+                        app:backgroundTint="@color/blue_light"
                         app:cornerRadius="12dp"
                         android:layout_marginBottom="20dp" />
 

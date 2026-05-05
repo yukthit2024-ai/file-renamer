@@ -16,4 +16,9 @@
     <color name="status_success">#16A34A</color>
     <color name="status_warning">#D97706</color>
     <color name="status_error">#DC2626</color>
+
+    <!-- Blue shades for buttons -->
+    <color name="blue_dark">#1565C0</color>
+    <color name="blue_medium">#1E88E5</color>
+    <color name="blue_light">#42A5F5</color>
 </resources>
