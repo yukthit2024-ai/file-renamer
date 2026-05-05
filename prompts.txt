@@ -9,6 +9,11 @@ more prompts
 *	Add a third button with label "Check Some..."
 	The function of this button is to generate MD5 checksum of files in configured folder.
 	If *.md5 already exists, then it is not to be generated.
+	the MD5 file name should be <ORIGINAL_FILE_NAME>.md5
+	And the content of the file should be 
+		MD5_DIGEST FILE_NAME
+		
+		
 
 ----------------------------------------------------------------------------------------
 present the above as one single prompt

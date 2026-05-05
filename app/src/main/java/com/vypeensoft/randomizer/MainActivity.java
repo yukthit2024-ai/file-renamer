@@ -437,7 +437,8 @@ public class MainActivity extends AppCompatActivity {
                                 if (md5File != null) {
                                     try (OutputStream out = getContentResolver().openOutputStream(md5File.getUri())) {
                                         if (out != null) {
-                                            out.write(md5.getBytes());
+                                            String content = md5 + " " + originalName;
+                                            out.write(content.getBytes());
                                             successCount++;
                                             Log.d(TAG, "Generated MD5 for: " + originalName);
                                         } else {
