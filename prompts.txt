@@ -13,7 +13,7 @@ more prompts
 	And the content of the file should be 
 		MD5_DIGEST FILE_NAME
 *	make all three button of same height and width and different background color... keep it different shades of blue		
-		
+*	if config file "filerenamer.config" doesnt exist in default location, create a new file with the default camera photo folder as the folder path inside it
 
 ----------------------------------------------------------------------------------------
 present the above as one single prompt
