@@ -420,7 +420,7 @@ public class MainActivity extends AppCompatActivity {
 
                         if (actionType == ActionType.CHECKSUM) {
                             // Checksum logic
-                            if (originalName.endsWith(".md5")) {
+                            if (originalName.toLowerCase().endsWith(".md5")) {
                                 skipCount++;
                                 continue;
                             }
@@ -429,7 +429,7 @@ public class MainActivity extends AppCompatActivity {
                             String md5FileName = originalName + ".md5";
                             boolean md5Exists = false;
                             for (DocumentFile sibling : files) {
-                                if (md5FileName.equals(sibling.getName())) {
+                                if (md5FileName.equalsIgnoreCase(sibling.getName())) {
                                     md5Exists = true;
                                     break;
                                 }
@@ -444,7 +444,7 @@ public class MainActivity extends AppCompatActivity {
                             // Generate MD5
                             try {
                                 String md5 = calculateMD5(file);
-                                DocumentFile md5File = directory.createFile("application/octet-stream", md5FileName);
+                                DocumentFile md5File = directory.createFile("text/plain", md5FileName);
                                 if (md5File != null) {
                                     try (OutputStream out = getContentResolver().openOutputStream(md5File.getUri())) {
                                         if (out != null) {
