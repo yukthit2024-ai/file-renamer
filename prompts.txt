@@ -17,7 +17,7 @@ more prompts
 *	MD5 file is still getting created with .md5.bin extension.  This has to be only FILENAME.md5
 	If a file extension is md5, then its MD5 need not be created
 *	make button of more height so that the text on that is visible.  Now only one line of text is visible even though the button text is of two lines.
-
+*	when "Randomization", skip md5 extension files
 
 
 ----------------------------------------------------------------------------------------

@@ -476,7 +476,7 @@ public class MainActivity extends AppCompatActivity {
                                     continue;
                                 }
                             } else {
-                                if (originalName.endsWith(XYZ_SUFFIX)) {
+                                if (originalName.endsWith(XYZ_SUFFIX) || originalName.toLowerCase().endsWith(".md5")) {
                                     skipCount++;
                                     continue;
                                 }
