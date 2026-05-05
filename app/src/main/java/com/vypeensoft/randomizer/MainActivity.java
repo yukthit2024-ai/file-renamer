@@ -37,6 +37,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -61,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     // UI components
     private MaterialButton            btnSelectFolder;
     private MaterialButton            btnReverse;
+    private MaterialButton            btnCheckSum;
     private TextView                  tvStatus;
     private LinearLayout              statusContainer;
     private ImageView                 statusIcon;
@@ -68,8 +72,13 @@ public class MainActivity extends AppCompatActivity {
     private DrawerLayout              drawerLayout;
     private NavigationView            navigationView;
 
+    // Action types
+    private enum ActionType {
+        RANDOMIZE, REVERSE, CHECKSUM
+    }
+
     // State to preserve intent across permission requests
-    private boolean isPendingReverse = false;
+    private ActionType pendingAction = ActionType.RANDOMIZE;
 
     // Background thread executor
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -84,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
                         // User returned from settings — check again
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
                                 && Environment.isExternalStorageManager()) {
-                            readConfigAndStart(isPendingReverse);
+                            readConfigAndStart(pendingAction);
                         } else {
                             showStatus(
                                     "\"All Files Access\" permission is required to read "
@@ -111,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
                                             | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
                                     getContentResolver()
                                             .takePersistableUriPermission(treeUri, flags);
-                                    startRenaming(treeUri, isPendingReverse);
+                                    startAction(Collections.singletonList(DocumentFile.fromTreeUri(MainActivity.this, treeUri)), pendingAction);
                                 }
                             }
                         }
@@ -132,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnSelectFolder   = findViewById(R.id.btnSelectFolder);
         btnReverse        = findViewById(R.id.btnReverse);
+        btnCheckSum       = findViewById(R.id.btnCheckSum);
         tvStatus          = findViewById(R.id.tvStatus);
         statusContainer   = findViewById(R.id.statusContainer);
         statusIcon        = findViewById(R.id.statusIcon);
@@ -171,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnSelectFolder.setOnClickListener(v -> onSelectFolderClicked());
         btnReverse.setOnClickListener(v -> onReverseClicked());
+        btnCheckSum.setOnClickListener(v -> onCheckSumClicked());
     }
 
     @Override
@@ -187,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
      * Called on launch (and again when the button is tapped).
      * Routes through permission checks before reading the config file.
      */
-    private void checkPermissionsAndReadConfig(boolean isReverse) {
+    private void checkPermissionsAndReadConfig(ActionType actionType) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // API 30+: need "All Files Access"
             if (!Environment.isExternalStorageManager()) {
@@ -220,11 +231,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        readConfigAndStart(isReverse);
+        readConfigAndStart(actionType);
     }
 
     /** Read the config file and kick off renaming. */
-    private void readConfigAndStart(boolean isReverse) {
+    private void readConfigAndStart(ActionType actionType) {
         File configFile = new File(CONFIG_FILE_PATH);
 
         if (!configFile.exists()) {
@@ -272,8 +283,8 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // All good — start renaming across all found folders
-        startRenaming(targetDirs, isReverse);
+        // All good — start action across all found folders
+        startAction(targetDirs, actionType);
     }
 
     // -------------------------------------------------------------------------
@@ -281,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
     // -------------------------------------------------------------------------
 
     private void onSelectFolderClicked() {
-        isPendingReverse = false;
+        pendingAction = ActionType.RANDOMIZE;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {
                 // Open the system "All Files Access" settings page
@@ -292,12 +303,12 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
         }
-        // Permission is already granted (or below API 30) — read config and rename
-        checkPermissionsAndReadConfig(false);
+        // Permission is already granted (or below API 30) — read config and action
+        checkPermissionsAndReadConfig(ActionType.RANDOMIZE);
     }
 
     private void onReverseClicked() {
-        isPendingReverse = true;
+        pendingAction = ActionType.REVERSE;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {
                 // Open the system "All Files Access" settings page
@@ -308,8 +319,24 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
         }
-        // Permission is already granted (or below API 30) — read config and reverse
-        checkPermissionsAndReadConfig(true);
+        // Permission is already granted (or below API 30) — read config and action
+        checkPermissionsAndReadConfig(ActionType.REVERSE);
+    }
+
+    private void onCheckSumClicked() {
+        pendingAction = ActionType.CHECKSUM;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                // Open the system "All Files Access" settings page
+                Intent intent = new Intent(
+                        Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                        Uri.parse("package:" + getPackageName()));
+                manageStorageLauncher.launch(intent);
+                return;
+            }
+        }
+        // Permission is already granted (or below API 30) — read config and action
+        checkPermissionsAndReadConfig(ActionType.CHECKSUM);
     }
 
     // -------------------------------------------------------------------------
@@ -330,7 +357,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             if (allGranted) {
-                readConfigAndStart(isPendingReverse);
+                readConfigAndStart(pendingAction);
             } else {
                 showStatus("Storage permission denied. Cannot read " + CONFIG_FILE_PATH,
                         StatusType.ERROR);
@@ -339,17 +366,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // -------------------------------------------------------------------------
-    // Rename logic — runs on a background thread via ExecutorService
+    // Action logic — runs on a background thread via ExecutorService
     // -------------------------------------------------------------------------
 
-    /** Process multiple directories. */
-    private void startRenaming(List<DocumentFile> directories, boolean isReverse) {
+    /** Process multiple directories for the specified action. */
+    private void startAction(List<DocumentFile> directories, ActionType actionType) {
         runOnUiThread(() -> {
             btnSelectFolder.setEnabled(false);
             btnReverse.setEnabled(false);
+            btnCheckSum.setEnabled(false);
             progressIndicator.setVisibility(View.VISIBLE);
             statusContainer.setVisibility(View.GONE);
-            showStatus((isReverse ? "Reversing" : "Renaming") + " files in " + directories.size() + " folder(s)…", StatusType.INFO);
+            
+            String label = "Processing…";
+            if (actionType == ActionType.RANDOMIZE) label = "Renaming files…";
+            else if (actionType == ActionType.REVERSE) label = "Reversing files…";
+            else if (actionType == ActionType.CHECKSUM) label = "Generating checksums…";
+            
+            showStatus(label + " in " + directories.size() + " folder(s)", StatusType.INFO);
         });
 
         executor.execute(() -> {
@@ -359,54 +393,90 @@ public class MainActivity extends AppCompatActivity {
 
             try {
                 for (DocumentFile directory : directories) {
-                    if (directory == null || !directory.isDirectory()) {
-                        Log.w(TAG, "Skipping invalid DocumentFile entry.");
-                        continue;
-                    }
+                    if (directory == null || !directory.isDirectory()) continue;
 
                     DocumentFile[] files = directory.listFiles();
-                    if (files == null || files.length == 0) {
-                        Log.d(TAG, "No files in folder: " + (directory.getName() != null ? directory.getName() : "unknown"));
-                        continue;
-                    }
+                    if (files == null || files.length == 0) continue;
 
                     for (DocumentFile file : files) {
                         if (!file.isFile()) continue;
 
                         String originalName = file.getName();
                         if (originalName == null) {
-                            Log.w(TAG, "Skipping file with null name.");
                             failCount++;
                             continue;
                         }
 
-                        String newName;
-                        if (isReverse) {
-                            if (originalName.endsWith(XYZ_SUFFIX)) {
-                                newName = originalName.substring(0, originalName.length() - XYZ_SUFFIX.length());
+                        if (actionType == ActionType.CHECKSUM) {
+                            // Checksum logic
+                            if (originalName.endsWith(".md5")) {
+                                skipCount++;
+                                continue;
+                            }
+
+                            // Check if .md5 already exists
+                            String md5FileName = originalName + ".md5";
+                            boolean md5Exists = false;
+                            for (DocumentFile sibling : files) {
+                                if (md5FileName.equals(sibling.getName())) {
+                                    md5Exists = true;
+                                    break;
+                                }
+                            }
+
+                            if (md5Exists) {
+                                Log.d(TAG, "MD5 already exists for: " + originalName);
+                                skipCount++;
+                                continue;
+                            }
+
+                            // Generate MD5
+                            try {
+                                String md5 = calculateMD5(file);
+                                DocumentFile md5File = directory.createFile("application/octet-stream", md5FileName);
+                                if (md5File != null) {
+                                    try (OutputStream out = getContentResolver().openOutputStream(md5File.getUri())) {
+                                        if (out != null) {
+                                            out.write(md5.getBytes());
+                                            successCount++;
+                                            Log.d(TAG, "Generated MD5 for: " + originalName);
+                                        } else {
+                                            failCount++;
+                                        }
+                                    }
+                                } else {
+                                    failCount++;
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "Failed to generate MD5 for " + originalName, e);
+                                failCount++;
+                            }
+
+                        } else {
+                            // Renaming logic (Randomize / Reverse)
+                            boolean isReverse = (actionType == ActionType.REVERSE);
+                            String newName;
+                            if (isReverse) {
+                                if (originalName.endsWith(XYZ_SUFFIX)) {
+                                    newName = originalName.substring(0, originalName.length() - XYZ_SUFFIX.length());
+                                } else {
+                                    skipCount++;
+                                    continue;
+                                }
                             } else {
-                                Log.d(TAG, "Does not have .xyz, skipping: " + originalName);
-                                skipCount++;
-                                continue;
+                                if (originalName.endsWith(XYZ_SUFFIX)) {
+                                    skipCount++;
+                                    continue;
+                                }
+                                newName = originalName + XYZ_SUFFIX;
                             }
-                        } else {
-                            // Skip files already having .xyz extension
-                            if (originalName.endsWith(XYZ_SUFFIX)) {
-                                Log.d(TAG, "Already has .xyz, skipping: " + originalName);
-                                skipCount++;
-                                continue;
+
+                            boolean renamed = file.renameTo(newName);
+                            if (renamed) {
+                                successCount++;
+                            } else {
+                                failCount++;
                             }
-                            newName = originalName + XYZ_SUFFIX;
-                        }
-
-                        boolean renamed = file.renameTo(newName);
-
-                        if (renamed) {
-                            successCount++;
-                            Log.d(TAG, (isReverse ? "Reversed: " : "Renamed: ") + originalName + " → " + newName);
-                        } else {
-                            failCount++;
-                            Log.w(TAG, "Failed to " + (isReverse ? "reverse: " : "rename: ") + originalName);
                         }
                     }
                 }
@@ -415,35 +485,57 @@ public class MainActivity extends AppCompatActivity {
                 String message;
                 StatusType type;
 
-                if (failCount > 0) {
-                    message = isReverse ? "Some Reversal Error" : "Some Randomization Error";
-                    type = (successCount > 0) ? StatusType.WARNING : StatusType.ERROR;
-                } else if (successCount > 0) {
-                    message = isReverse ? "Reversal Success" : "Randomization Success";
-                    type = StatusType.SUCCESS;
+                if (actionType == ActionType.CHECKSUM) {
+                    if (failCount > 0) {
+                        message = "Some Checksum Errors";
+                        type = (successCount > 0) ? StatusType.WARNING : StatusType.ERROR;
+                    } else if (successCount > 0) {
+                        message = "Checksum Generation Success";
+                        type = StatusType.SUCCESS;
+                    } else {
+                        message = "No New Files To Checksum";
+                        type = StatusType.INFO;
+                    }
                 } else {
-                    message = isReverse ? "No Files To Reverse" : "No Files To Randomize";
-                    type = StatusType.INFO;
+                    boolean isReverse = (actionType == ActionType.REVERSE);
+                    if (failCount > 0) {
+                        message = isReverse ? "Some Reversal Error" : "Some Randomization Error";
+                        type = (successCount > 0) ? StatusType.WARNING : StatusType.ERROR;
+                    } else if (successCount > 0) {
+                        message = isReverse ? "Reversal Success" : "Randomization Success";
+                        type = StatusType.SUCCESS;
+                    } else {
+                        message = isReverse ? "No Files To Reverse" : "No Files To Randomize";
+                        type = StatusType.INFO;
+                    }
                 }
 
                 postStatus(message, type);
 
             } catch (Exception e) {
-                Log.e(TAG, "Unexpected error during " + (isReverse ? "reversal" : "renaming"), e);
+                Log.e(TAG, "Unexpected error during " + actionType, e);
                 postStatus("An unexpected error occurred: " + e.getMessage(), StatusType.ERROR);
             }
         });
     }
 
-    /** Overload accepting a DocumentFile directory directly. */
-    private void startRenaming(DocumentFile directory, boolean isReverse) {
-        startRenaming(Collections.singletonList(directory), isReverse);
-    }
-
-    /** Overload accepting a SAF URI (kept as fallback). */
-    private void startRenaming(Uri treeUri, boolean isReverse) {
-        DocumentFile directory = DocumentFile.fromTreeUri(this, treeUri);
-        startRenaming(directory, isReverse);
+    private String calculateMD5(DocumentFile file) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("MD5");
+        try (InputStream is = getContentResolver().openInputStream(file.getUri())) {
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = is.read(buffer)) > 0) {
+                digest.update(buffer, 0, read);
+            }
+            byte[] md5sum = digest.digest();
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : md5sum) {
+                String hex = Integer.toHexString(0xFF & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -455,6 +547,7 @@ public class MainActivity extends AppCompatActivity {
             progressIndicator.setVisibility(View.GONE);
             btnSelectFolder.setEnabled(true);
             btnReverse.setEnabled(true);
+            btnCheckSum.setEnabled(true);
             showStatus(message, type);
         });
     }

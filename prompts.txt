@@ -4,8 +4,11 @@ On button click, it has to find files in a user selected folder and rename the f
 Give me the prompts to give to an agent to achieve this
 ----------------------------------------------------------------------------------------
 more prompts
-instead of kotlin, use java
-Add another button, on click of that button, it should reverse the action done by "Randomize"
+*	instead of kotlin, use java
+*	Add another button, on click of that button, it should reverse the action done by "Randomize"
+*	Add a third button with label "Check Some..."
+	The function of this button is to generate MD5 checksum of files in configured folder.
+	If *.md5 already exists, then it is not to be generated.
 
 ----------------------------------------------------------------------------------------
 present the above as one single prompt
